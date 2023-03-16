@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 import rospy
 from clover import srv
@@ -10,13 +10,24 @@ __get_telemetry = rospy.ServiceProxy("get_telemetry", srv.GetTelemetry)
 __navigate = rospy.ServiceProxy("navigate", srv.Navigate)
 __land = rospy.ServiceProxy("land", Trigger)
 
-HANDLER = Optional[Callable[[Any], bool]]
+
+@dataclass
+class Telemetry:
+    x: float
+    y: float
+    z: float
+    yaw: float
 
 
-def get_telemetry(frame_id: str = "map"):
+HANDLER = Optional[Callable[[Telemetry], bool]]
+
+
+# Получить данные с датчиков
+def get_telemetry(frame_id: str = "map") -> Telemetry:
     return __get_telemetry(frame_id=frame_id)
 
 
+# Функция перемещения в заданную точку
 def navigate(
     x: float,
     y: float,
@@ -27,7 +38,7 @@ def navigate(
     auto_arm: bool = False,
     frame_id: str = "map",
     handler: HANDLER = None,
-):
+) -> None:
     res = __navigate(
         x=x,
         y=y,
@@ -52,7 +63,8 @@ def navigate(
             return
 
 
-def land(handler: HANDLER = None):
+# Функция посадки
+def land(handler: HANDLER = None) -> None:
     __land()
     while True:
         telemetry = __get_telemetry(frame_id="navigate_target")
